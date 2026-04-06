@@ -1,7 +1,16 @@
 [project]
 name = "dicom-agent-toolkit"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI Agent-driven DICOM medical imaging analysis toolkit"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
