@@ -4,11 +4,22 @@ version = "0.1.0"
 description = "AI Agent-driven DICOM medical imaging analysis toolkit"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+  "numpy>=1.24.0",
+  "pydicom>=2.4.0",
+  "simpleitk>=2.3.0",
+  "onnxruntime>=1.16.0",
+  "opencv-python>=4.8.0",
+]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0.0",
+  "pytest-asyncio>=0.21.0",
+]
+ui = [
+  "gradio>=4.0.0",
+  "streamlit>=1.28.0",
 ]
 
 [build-system]
