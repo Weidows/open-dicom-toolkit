@@ -10,6 +10,7 @@ dependencies = [
   "simpleitk>=2.3.0",
   "onnxruntime>=1.16.0",
   "opencv-python>=4.8.0",
+  "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]
