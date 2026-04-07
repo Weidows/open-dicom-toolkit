@@ -8,7 +8,7 @@ class TestOperatorBase:
 
     def test_operator_has_required_metadata(self):
         """Operator must have name, version, capabilities."""
-        from dicom_platform.core.operator import OperatorBase
+        from src.core.operator import OperatorBase
 
         # Abstract class - cannot instantiate directly
         with pytest.raises(TypeError):
@@ -16,7 +16,7 @@ class TestOperatorBase:
 
     def test_operator_subclass_has_metadata(self):
         """Concrete operator must define metadata fields."""
-        from dicom_platform.core.operator import OperatorBase, OperatorMeta
+        from src.core.operator import OperatorBase, OperatorMeta
 
         meta = OperatorMeta(
             name="test_operator",
@@ -34,7 +34,7 @@ class TestOperatorBase:
 
     def test_operator_subclass_implements_run(self):
         """Operator subclass must implement run method."""
-        from dicom_platform.core.operator import OperatorBase, OperatorMeta
+        from src.core.operator import OperatorBase, OperatorMeta
 
         class DummyOperator(OperatorBase):
             def __init__(self, config: dict):
@@ -55,8 +55,8 @@ class TestRegistry:
 
     def test_registry_can_register_operator(self):
         """Registry should allow registering operators."""
-        from dicom_platform.core.registry import Registry
-        from dicom_platform.core.operator import OperatorBase, OperatorMeta
+        from src.core.registry import Registry
+        from src.core.operator import OperatorBase, OperatorMeta
 
         class DummyOperator(OperatorBase):
             def __init__(self, config: dict):
@@ -78,8 +78,8 @@ class TestRegistry:
 
     def test_registry_list_by_capability(self):
         """Registry should filter operators by capability."""
-        from dicom_platform.core.registry import Registry
-        from dicom_platform.core.operator import OperatorBase, OperatorMeta
+        from src.core.registry import Registry
+        from src.core.operator import OperatorBase, OperatorMeta
 
         class SegmentationOp(OperatorBase):
             def __init__(self, config: dict):
@@ -117,8 +117,8 @@ class TestRegistry:
 
     def test_registry_get_operator(self):
         """Registry should instantiate operators by name."""
-        from dicom_platform.core.registry import Registry
-        from dicom_platform.core.operator import OperatorBase, OperatorMeta
+        from src.core.registry import Registry
+        from src.core.operator import OperatorBase, OperatorMeta
 
         class MyOperator(OperatorBase):
             def __init__(self, config: dict):
@@ -141,7 +141,7 @@ class TestRegistry:
 
     def test_registry_get_nonexistent_raises(self):
         """Getting non-existent operator should raise KeyError."""
-        from dicom_platform.core.registry import Registry
+        from src.core.registry import Registry
 
         registry = Registry()
         with pytest.raises(KeyError):

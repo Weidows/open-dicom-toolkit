@@ -1,7 +1,7 @@
 """Base operators for DICOM processing."""
 from typing import Any
 
-from dicom_platform.core import OperatorBase, OperatorMeta
+from src.core import OperatorBase, OperatorMeta
 
 
 class DICOMReader(OperatorBase):

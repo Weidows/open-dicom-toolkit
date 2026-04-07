@@ -8,7 +8,7 @@ class TestDICOMReader:
 
     def test_dicom_reader_metadata(self):
         """DICOMReader should have correct metadata."""
-        from dicom_platform.operators import DICOMReader
+        from src.operators import DICOMReader
 
         assert DICOMReader.name == "dicom_reader"
         assert "read" in DICOMReader.capabilities
@@ -16,7 +16,7 @@ class TestDICOMReader:
 
     def test_dicom_reader_run_returns_image_and_meta(self):
         """DICOMReader.run should return image data and metadata."""
-        from dicom_platform.operators import DICOMReader
+        from src.operators import DICOMReader
         import numpy as np
 
         # Create minimal test context with a mock path
