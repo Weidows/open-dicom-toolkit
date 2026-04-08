@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  # DICOM Server (Orthanc)
+  orthanc:
+    image: orthanc/server:latest
+    container_name: dicom-orthanc
+    ports:
+      - "8042:8042"
+      - "8043:8043"
+    volumes:
+      - orthanc-db:/var/lib/orthanc/db
+      - ./samples:/samples
+    environment:
+      - ORTHANC_USERNAME=orthanc
+      - ORTHANC_PASSWORD=orthanc
+      - ORTHANC_ENABLE_DICOM_WEB=YES
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8042/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Analysis API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: dicom-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ORTHANC_URL=http://orthanc:8042
+      - ORTHANC_USERNAME=orthanc
+      - ORTHANC_PASSWORD=orthanc
+      - MODEL_PATH=/models/plaque_detector.onnx
+    volumes:
+      - ./models:/models
+    depends_on:
+      orthanc:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  orthanc-db:
