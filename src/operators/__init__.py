@@ -15,4 +15,15 @@ __all__ = [
     "ModelOperator",
     "MeasurementOperator",
     "ReportGenerator",
+    "BUILTIN_OPERATORS",
+]
+
+# List of all builtin operators for auto-registration
+BUILTIN_OPERATORS = [
+    DICOMReader,
+    MetaExtractor,
+    USPreprocess,
+    ModelOperator,
+    MeasurementOperator,
+    ReportGenerator,
 ]

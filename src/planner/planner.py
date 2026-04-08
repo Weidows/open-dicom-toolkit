@@ -76,19 +76,19 @@ class PlanningAgent:
 
         # Always start with DICOMReader
         read_id = f"node_{node_id}"
-        nodes.append({"id": read_id, "type": "DICOMReader", "params": {}})
+        nodes.append({"id": read_id, "type": "dicom_reader", "params": {}})
         node_id += 1
 
         # Add MetaExtractor
         meta_id = f"node_{node_id}"
-        nodes.append({"id": meta_id, "type": "DICOMMetaExtractor", "params": {}})
+        nodes.append({"id": meta_id, "type": "meta_extractor", "params": {}})
         edges.append([read_id, meta_id])
         node_id += 1
 
         # Add preprocessing if needed
         if any(k in instruction_lower for k in ["超声", "ultrasound", "us", "图像", "image"]):
             pre_id = f"node_{node_id}"
-            nodes.append({"id": pre_id, "type": "USPreprocess", "params": {}})
+            nodes.append({"id": pre_id, "type": "us_preprocess", "params": {}})
             edges.append([meta_id, pre_id])
             node_id += 1
             prev_node = pre_id
@@ -98,13 +98,13 @@ class PlanningAgent:
         # Add model operator for segmentation/detection
         if any(k in instruction_lower for k in ["分割", "segment", "检测", "detect", "找", "find", "肿块", "lesion", "病灶"]):
             model_id = f"node_{node_id}"
-            nodes.append({"id": model_id, "type": "ModelOperator", "params": {}})
+            nodes.append({"id": model_id, "type": "model_operator", "params": {}})
             edges.append([prev_node, model_id])
             node_id += 1
 
             # Add postprocess/measurement
             measure_id = f"node_{node_id}"
-            nodes.append({"id": measure_id, "type": "MeasurementOperator", "params": {}})
+            nodes.append({"id": measure_id, "type": "measurement_operator", "params": {}})
             edges.append([model_id, measure_id])
             node_id += 1
             final_node = measure_id
@@ -113,7 +113,7 @@ class PlanningAgent:
 
         # Always add report generator
         report_id = f"node_{node_id}"
-        nodes.append({"id": report_id, "type": "ReportGenerator", "params": {}})
+        nodes.append({"id": report_id, "type": "report_generator", "params": {}})
         edges.append([final_node, report_id])
 
         return {
