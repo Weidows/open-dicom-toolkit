@@ -7,6 +7,9 @@ from .base import (
     MeasurementOperator,
     ReportGenerator,
 )
+from .dicomweb_client import DICOMWebClient, create_orthanc_client
+from .dicomweb_operator import DICOMWebOperator, DICOMWebStoreOperator
+from .onnx_runner import ONNXRunner
 
 __all__ = [
     "DICOMReader",
@@ -15,6 +18,11 @@ __all__ = [
     "ModelOperator",
     "MeasurementOperator",
     "ReportGenerator",
+    "ONNXRunner",
+    "DICOMWebClient",
+    "create_orthanc_client",
+    "DICOMWebOperator",
+    "DICOMWebStoreOperator",
     "BUILTIN_OPERATORS",
 ]
 

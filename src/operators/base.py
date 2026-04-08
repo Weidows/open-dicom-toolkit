@@ -112,7 +112,7 @@ class USPreprocess(OperatorBase):
 
 
 class ModelOperator(OperatorBase):
-    """Run model inference."""
+    """Run model inference using ONNX Runtime."""
 
     name = "model_operator"
     version = "0.1.0"
@@ -122,13 +122,23 @@ class ModelOperator(OperatorBase):
 
     def __init__(self, config: dict):
         super().__init__(config)
+        self.model_path = config.get("model_path")
         self.model_name = config.get("model", "default")
+        self.target_size = config.get("target_size")  # (H, W)
+        self.runner = None
+
+    def _get_runner(self, model_path: str):
+        """Get or create ONNX runner."""
+        if self.runner is None or (hasattr(self.runner, 'model_path') and self.runner.model_path != model_path):
+            from .onnx_runner import ONNXRunner
+            self.runner = ONNXRunner(model_path).load()
+        return self.runner
 
     def run(self, ctx: dict) -> dict:
         """Run model inference.
 
         Args:
-            ctx: Contains 'preprocessed_image' and optionally 'model'.
+            ctx: Contains 'preprocessed_image' and optionally 'model' or 'model_path'.
 
         Returns:
             ctx with 'predictions' and 'probabilities'.
@@ -139,10 +149,33 @@ class ModelOperator(OperatorBase):
             ctx["probabilities"] = None
             return ctx
 
-        # TODO: Load and run actual model (ONNX/TorchScript)
-        # Placeholder
-        ctx["predictions"] = None
-        ctx["probabilities"] = None
+        # Get model path from context or config
+        model_path = ctx.get("model_path", self.model_path)
+
+        # Check if model path exists
+        if not model_path:
+            ctx["predictions"] = None
+            ctx["probabilities"] = None
+            ctx["model_error"] = "No model_path provided"
+            return ctx
+
+        try:
+            runner = self._get_runner(model_path)
+
+            # Preprocess
+            original_size = (image.shape[1], image.shape[2]) if image.ndim == 3 else image.shape[:2]
+            preprocessed = runner.preprocess(image, self.target_size)
+
+            # Inference
+            predictions, probabilities = runner.predict(preprocessed)
+
+            # Postprocess
+            ctx["predictions"] = runner.postprocess(predictions, original_size)
+            ctx["probabilities"] = runner.postprocess(probabilities, original_size)
+        except Exception as e:
+            ctx["model_error"] = str(e)
+            ctx["predictions"] = None
+            ctx["probabilities"] = None
 
         return ctx
 
