@@ -4,9 +4,11 @@ from typing import Any
 try:
     import pydicom
     import numpy as np
+    from pydicom.dataset import Dataset
 except ImportError:
     pydicom = None
     np = None
+    Dataset = None
 
 from src.core import OperatorBase, OperatorMeta
 
@@ -268,34 +270,159 @@ class MeasurementOperator(OperatorBase):
 
 
 class ReportGenerator(OperatorBase):
-    """Generate analysis reports."""
+    """Generate analysis reports (JSON and DICOM SR)."""
 
     name = "report_generator"
     version = "0.1.0"
-    capabilities = ["report", "output"]
-    input_schema = {"measurements": "dict", "extracted_meta": "dict"}
-    output_schema = {"report": "dict"}
+    capabilities = ["report", "output", "DICOM_SR"]
+    input_schema = {"measurements": "dict", "extracted_meta": "dict", "detections": "list"}
+    output_schema = {"report": "dict", "sr_file": "str"}
 
     def run(self, ctx: dict) -> dict:
         """Generate structured report.
 
         Args:
-            ctx: Contains 'measurements' and 'extracted_meta'.
+            ctx: Contains 'measurements', 'extracted_meta', 'detections'.
 
         Returns:
             ctx with 'report' containing structured output.
+            Optionally 'sr_file' if DICOM SR generation is requested.
         """
         measurements = ctx.get("measurements", [])
         meta = ctx.get("extracted_meta", {})
+        detections = ctx.get("detections", [])
+        generate_sr = ctx.get("generate_sr", False)
 
-        # TODO: Implement actual report generation (DICOM SR / JSON)
+        # Generate JSON report
         report = {
             "summary": {
                 "total_findings": len(measurements) if measurements else 0,
+                "total_detections": len(detections) if detections else 0,
             },
             "measurements": measurements,
+            "detections": detections,
             "metadata": meta,
         }
 
         ctx["report"] = report
+
+        # Generate DICOM SR if requested
+        if generate_sr:
+            sr_file = self._generate_sr(ctx)
+            ctx["sr_file"] = sr_file
+
         return ctx
+
+    def _generate_sr(self, ctx: dict) -> str:
+        """Generate DICOM SR file."""
+        try:
+            import pydicom
+            from pydicom.dataset import Dataset, FileDataset
+            from pydicom.uid import generate_uid, ExplicitVRLittleEndian
+            from datetime import datetime
+            from pydicom.sequence import Sequence
+        except ImportError:
+            ctx["error"] = "pydicom not installed, cannot generate SR"
+            return None
+
+        measurements = ctx.get("measurements", [])
+        detections = ctx.get("detections", [])
+        meta = ctx.get("extracted_meta", {})
+
+        # Create file meta
+        file_meta = Dataset()
+        file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.88.11"
+        file_meta.MediaStorageSOPInstanceUID = generate_uid()
+        file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
+        file_meta.ImplementationClassUID = generate_uid()
+
+        # Create dataset
+        sr = FileDataset(None, {}, file_meta=file_meta, preamble=b'\x00' * 128)
+        sr.is_little_endian = True
+        sr.is_implicit_VR = False
+
+        # Basic attributes
+        sr.SOPClassUID = file_meta.MediaStorageSOPClassUID
+        sr.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
+
+        # Patient
+        sr.PatientName = meta.get("patient_name", "Anonymous^Patient")
+        sr.PatientID = meta.get("patient_id", "UNKNOWN")
+
+        # Study
+        sr.StudyDate = datetime.now().strftime("%Y%m%d")
+        sr.StudyTime = datetime.now().strftime("%H%M%S")
+        sr.StudyInstanceUID = meta.get("study_instance_uid", generate_uid())
+        sr.StudyID = "1"
+
+        # Series
+        sr.SeriesDate = sr.StudyDate
+        sr.SeriesTime = sr.StudyTime
+        sr.SeriesInstanceUID = generate_uid()
+        sr.SeriesNumber = 1
+        sr.Modality = "SR"
+
+        # Instance
+        sr.InstanceNumber = "1"
+        sr.InstanceCreationDate = sr.StudyDate
+        sr.InstanceCreationTime = sr.StudyTime
+
+        # Content
+        sr.ValueType = "CONTAINER"
+        sr.ConceptNameCodeSequence = [self._create_code("125100", "DCM", "Imaging Measurement Report")]
+        sr.ContinuityOfContent = "SEPARATE"
+
+        # Build content sequence
+        content_items = []
+
+        # Add summary
+        summary_item = Dataset()
+        summary_item.RelationshipType = "CONTAINS"
+        summary_item.ValueType = "TEXT"
+        summary_item.ConceptNameCodeSequence = [self._create_code("121401", "DCM", "Summary")]
+        summary_item.TextValue = f"Total detections: {len(detections)}, Total measurements: {len(measurements)}"
+        content_items.append(summary_item)
+
+        # Add detections as findings
+        for i, detection in enumerate(detections):
+            finding_item = Dataset()
+            finding_item.RelationshipType = "CONTAINS"
+            finding_item.ValueType = "TEXT"
+
+            label = detection.get("label", "Unknown")
+            bbox = detection.get("bbox", [])
+            score = detection.get("confidence", 0)
+
+            finding_text = f"Finding {i+1}: {label}"
+            if bbox:
+                finding_text += f", Location: {bbox}"
+            if score:
+                finding_text += f", Confidence: {score:.2f}"
+
+            finding_item.ConceptNameCodeSequence = [self._create_code("SCTID", "SCTID", label)]
+            finding_item.TextValue = finding_text
+            content_items.append(finding_item)
+
+        sr.ContentSequence = Sequence(content_items)
+
+        # Verification
+        sr.IsComplete = True
+        sr.IsFinal = True
+        sr.VerificationFlag = "UNVERIFIED"
+
+        # Save
+        import os
+        output_dir = ctx.get("output_dir", "output")
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, f"sr_report_{sr.SOPInstanceUID}.dcm")
+
+        sr.save_as(output_path, write_like_original=False)
+        return output_path
+
+    def _create_code(self, code_value: str, scheme: str, meaning: str) -> Dataset:
+        """Create a code sequence item."""
+        code = Dataset()
+        code.CodeValue = code_value
+        code.CodeSchemeDesignator = scheme
+        code.CodeMeaning = meaning
+        return code
