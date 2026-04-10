@@ -1,6 +1,13 @@
 """Base operators for DICOM processing."""
 from typing import Any
 
+try:
+    import pydicom
+    import numpy as np
+except ImportError:
+    pydicom = None
+    np = None
+
 from src.core import OperatorBase, OperatorMeta
 
 
@@ -23,6 +30,7 @@ class DICOMReader(OperatorBase):
             ctx with 'image' and 'meta' keys populated.
         """
         import os
+        from pathlib import Path
 
         path = ctx.get("path")
         if not path:
@@ -33,14 +41,58 @@ class DICOMReader(OperatorBase):
             ctx["error"] = f"Path not found: {path}"
             return ctx
 
-        # TODO: Implement actual DICOM reading with pydicom
-        # Placeholder implementation
-        ctx["meta"] = {
-            "path": path,
-            "modality": "UNKNOWN",
-            "pixel_spacing": None,
-        }
-        ctx["image"] = None
+        if pydicom is None or np is None:
+            ctx["error"] = "pydicom or numpy not installed"
+            return ctx
+
+        try:
+            # If path is directory, find first .dcm file
+            if os.path.isdir(path):
+                dcm_files = sorted(Path(path).rglob("*.dcm"))
+                if not dcm_files:
+                    ctx["error"] = f"No .dcm files found in {path}"
+                    return ctx
+                path = str(dcm_files[0])
+
+            # Read DICOM file
+            ds = pydicom.dcmread(path)
+
+            # Extract metadata
+            meta = {
+                "path": path,
+                "modality": str(ds.get("Modality", "UNKNOWN")),
+                "patient_id": str(ds.get("PatientID", "")),
+                "study_instance_uid": str(ds.get("StudyInstanceUID", "")),
+                "series_instance_uid": str(ds.get("SeriesInstanceUID", "")),
+                "sop_instance_uid": str(ds.get("SOPInstanceUID", "")),
+                "pixel_spacing": ds.get("PixelSpacing"),
+                "image_orientation": ds.get("ImageOrientationPatient"),
+                "image_position": ds.get("ImagePositionPatient"),
+                "rows": ds.get("Rows"),
+                "columns": ds.get("Columns"),
+                "bits_allocated": ds.get("BitsAllocated"),
+                "bits_stored": ds.get("BitsStored"),
+                "photometric_interpretation": str(ds.get("PhotometricInterpretation", "")),
+            }
+
+            # Extract pixel data
+            image = None
+            if hasattr(ds, "pixel_array"):
+                image = ds.pixel_array
+
+                # Handle different photometric interpretations
+                if meta.get("photometric_interpretation") == "MONOCHROME1":
+                    # Invert for monochrome1
+                    image = image.max() - image
+
+            ctx["meta"] = meta
+            ctx["image"] = image
+            ctx["dicom_dataset"] = ds  # Keep original dataset for advanced access
+
+        except Exception as e:
+            ctx["error"] = f"Failed to read DICOM: {e}"
+            ctx["image"] = None
+            ctx["meta"] = {"path": path, "modality": "ERROR"}
 
         return ctx
 

@@ -1,5 +1,5 @@
 def main():
-    print("Hello from dicom-agent-toolkit!")
+    print("Hello from open-dicom-toolkit!")
 
 
 if __name__ == "__main__":
