@@ -36,7 +36,7 @@ class TestPlanner:
         workflow = agent.plan("分析这个DICOM文件")
 
         node_types = [n["type"] for n in workflow["nodes"]]
-        assert "DICOMReader" in node_types
+        assert "dicom_reader" in node_types
 
     def test_planner_output_has_valid_structure(self):
         """Workflow output should have valid node/edge structure."""
@@ -64,12 +64,12 @@ class TestPlanner:
         # Segmentation task -> should include model operator
         seg_workflow = agent.plan("分割这个图像")
         node_types = [n["type"] for n in seg_workflow["nodes"]]
-        assert "ModelOperator" in node_types
+        assert "model_operator" in node_types
 
         # Detection task -> should include model operator
         det_workflow = agent.plan("检测病灶")
         node_types = [n["type"] for n in det_workflow["nodes"]]
-        assert "ModelOperator" in node_types
+        assert "model_operator" in node_types
 
     def test_planner_to_yaml(self):
         """Planner should be able to output YAML."""
@@ -80,4 +80,4 @@ class TestPlanner:
 
         yaml_output = agent.to_yaml(workflow)
         assert "nodes:" in yaml_output
-        assert "DICOMReader" in yaml_output
+        assert "dicom_reader" in yaml_output
