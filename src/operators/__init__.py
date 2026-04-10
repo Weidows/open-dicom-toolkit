@@ -10,6 +10,7 @@ from .base import (
 from .dicomweb_client import DICOMWebClient, create_orthanc_client
 from .dicomweb_operator import DICOMWebOperator, DICOMWebStoreOperator
 from .onnx_runner import ONNXRunner
+from .carotid_plaque import CarotidPlaqueDetector
 
 __all__ = [
     "DICOMReader",
@@ -23,6 +24,7 @@ __all__ = [
     "create_orthanc_client",
     "DICOMWebOperator",
     "DICOMWebStoreOperator",
+    "CarotidPlaqueDetector",
     "BUILTIN_OPERATORS",
 ]
 
@@ -34,4 +36,5 @@ BUILTIN_OPERATORS = [
     ModelOperator,
     MeasurementOperator,
     ReportGenerator,
+    CarotidPlaqueDetector,
 ]
