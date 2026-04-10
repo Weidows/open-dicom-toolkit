@@ -4,6 +4,17 @@ import logging
 from .operator import OperatorBase, OperatorMeta
 from .registry import Registry, get_registry
 from .task_capability import TaskCapability
+from .errors import (
+    DicomAgentError,
+    RetryableError,
+    BusinessError,
+    FatalError,
+    ErrorSeverity,
+    RetryConfig,
+    retry_with_backoff,
+    CircuitBreaker,
+    format_error_message,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +24,16 @@ __all__ = [
     "TaskCapability",
     "Registry",
     "get_registry",
+    # Error handling
+    "DicomAgentError",
+    "RetryableError",
+    "BusinessError",
+    "FatalError",
+    "ErrorSeverity",
+    "RetryConfig",
+    "retry_with_backoff",
+    "CircuitBreaker",
+    "format_error_message",
 ]
 
 
