@@ -19,9 +19,64 @@ result = execute_workflow(workflow, {"path": "/data/scan.dcm"})
 print(result["report"])
 ```
 
+## Installation
+
+```bash
+pip install -e .
+```
+
+## Usage
+
+### CLI
+
+```bash
+# Analyze a DICOM file
+python -m src.cli analyze /path/to/dicom.dcm -i "检测斑块并测量大小"
+
+# Output workflow as YAML
+python -m src.cli analyze /path/to/dicom.dcm -y
+
+# Use custom ONNX model
+python -m src.cli analyze /path/to/dicom.dcm -m models/plaque_detector.onnx
+```
+
+### REST API Server
+
+```bash
+# Start server
+python -m src.server
+
+# Or with Docker
+docker-compose up -d
+```
+
+API endpoints:
+- `GET /` - API info
+- `GET /health` - Health check
+- `GET /operators` - List available operators
+- `POST /plan` - Generate workflow from instruction
+- `POST /analyze` - Analyze DICOM file
+
+### Python Client
+
+```python
+import requests
+
+# Upload and analyze
+with open("scan.dcm", "rb") as f:
+    response = requests.post(
+        "http://localhost:8000/analyze",
+        files={"file": f},
+        data={"instruction": "检测颈动脉斑块"}
+    )
+
+result = response.json()
+print(result["report"])
+```
+
 ## Plugin System
 
-The toolkit supports extensible plugins for different medical imaging tasks:
+The toolkit supports extensible plugins for different medical imaging tasks.
 
 ### Built-in Operators
 
@@ -77,10 +132,10 @@ operators = registry.get_compatible_operators(
 
 ```
 src/
-├── core/            # OperatorBase, TaskCapability, Registry
-├── operators/       # Built-in operators (DICOMReader, etc.)
-├── planner/         # PlanningAgent (NL → Workflow)
-└── executor/        # WorkflowExecutor (DAG → Results)
+├── core/          # OperatorBase, TaskCapability, Registry
+├── operators/     # Built-in operators (DICOMReader, etc.)
+├── planner/       # PlanningAgent (NL → Workflow)
+└── executor/      # WorkflowExecutor (DAG → Results)
 ```
 
 ## Testing
@@ -88,6 +143,26 @@ src/
 ```bash
 pytest tests/ -v
 ```
+
+## Docker Compose
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+Services:
+- `orthanc` - DICOM server on port 8042
+- `api` - Analysis API on port 8000
 
 ## License
 
