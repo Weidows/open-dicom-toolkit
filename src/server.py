@@ -9,12 +9,19 @@ from pydantic import BaseModel
 from src.planner import PlanningAgent
 from src.executor import execute_workflow
 
+from fastapi_radar import Radar
+from sqlalchemy import create_engine
+
 app = FastAPI(
     title="DICOM Agent Toolkit API",
     description="AI Agent-driven DICOM medical imaging analysis",
     version="0.1.0",
 )
+engine = create_engine("sqlite:///./app.db")
 
+# Full monitoring with SQL query tracking
+radar = Radar(app, db_engine=engine)
+radar.create_tables()
 
 class AnalyzeRequest(BaseModel):
     """Analysis request."""
