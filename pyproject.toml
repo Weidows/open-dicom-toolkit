@@ -17,6 +17,8 @@ dependencies = [
     "python-multipart>=0.0.26",
     "httpx>=0.25.0",
     "fastapi-radar>=0.3.4",
+    "pydantic-settings>=2.14.0",
+    "gradio>=6.11.0",
 ]
 
 [project.optional-dependencies]

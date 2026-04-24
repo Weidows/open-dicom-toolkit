@@ -1,0 +1,22 @@
+# DICOM Agent Toolkit Configuration
+# Override with environment variables: DICOM_HOST=127.0.0.1 DICOM_PORT=9000
+
+host: "0.0.0.0"
+port: 8000
+reload: false
+
+# Gradio Web UI
+enable_ui: true
+ui_title: "DICOM Agent Toolkit"
+ui_path: "/ui"
+
+# Model and I/O paths
+model_path: null
+upload_dir: "./uploads"
+output_dir: "./output"
+
+# Logging
+log_level: "INFO"
+
+# Monitoring
+enable_radar: true
